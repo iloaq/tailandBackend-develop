@@ -1,0 +1,41 @@
+version: '3'
+
+volumes:
+  pg_data:
+  static:
+  media:
+
+services:
+  db:
+    image: postgres:13.10
+    env_file: .env
+    environment:
+      POSTGRES_PASSWORD: zombi454
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+  backend:
+    build: ./backend/
+    command: bash -c "python manage.py migrate && python manage.py collectstatic --no-input && cp -r /app/collect_static/. /static_backend/ && gunicorn Backend.wsgi:application -b 0.0.0.0:8020"
+    env_file: .env
+    depends_on:
+      - db
+    ports:
+      - 8020:8020
+    volumes:
+      - static:/static_backend/admin/
+      - media:/media
+  redis:
+    image: redis:latest
+  celery:
+    build:
+      context: ./backend/
+    hostname: worker
+    entrypoint: celery
+    environment:
+      - DJANGO_SETTINGS_MODULE=Backend.settings
+    command: -A celery_app.app worker --loglevel=info
+    links:
+      - redis
+    depends_on:
+      - redis
+

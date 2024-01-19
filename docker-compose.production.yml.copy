@@ -1,0 +1,54 @@
+version: '3'
+
+volumes:
+  pg_data:
+  static:
+  media:
+
+services:
+  db:
+    container_name: tailand_db
+    image: postgres:13.10
+    env_file: .env
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+  backend:
+    container_name: tailand_backend
+    image: grigoleg/tailand_backend
+    env_file: .env
+    volumes:
+      - static:/static_backend
+      - media:/media
+  gateway:
+    container_name: tailand_gateway
+    image: grigoleg/tailand_gateway
+    build: ./gateway/
+    env_file: .env
+    ports:
+      - 7000:80
+    volumes:
+      - static:/static
+      - media:/media
+  redis:
+    image: redis:latest
+  celery:
+    image: grigoleg/tailand_backend
+    hostname: worker
+    entrypoint: celery
+    environment:
+      - DJANGO_SETTINGS_MODULE=Backend.settings
+    command: -A celery_app.app worker --loglevel=info
+    links:
+      - redis
+    depends_on:
+      - redis
+  daphne:
+    container_name: tailand_asgi
+    image: grigoleg/tailand_asgi
+    depends_on:
+      - redis
+    
+    ports:
+      - 8020:8020
+  
+  

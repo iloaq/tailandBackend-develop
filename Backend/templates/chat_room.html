@@ -1,0 +1,24 @@
+     <!DOCTYPE html>
+     <html>
+     <head>
+         <title>Chat Room</title>
+         <script>
+             var roomName = '{{ room_name }}';
+             var socket = new WebSocket('ws://' + window.location.host + '/ws/chat/' + roomName + '/');
+             socket.onmessage = function(e) {
+                 var message = e.data;
+                 // Обработка полученного сообщения
+             };
+             function sendMessage() {
+                 var messageInput = document.getElementById('message-input');
+                 var message = messageInput.value;
+                 socket.send(message);
+                 messageInput.value = '';
+             }
+         </script>
+     </head>
+     <body>
+         <input type="text" id="message-input">
+         <button onclick="sendMessage()">Send</button>
+     </body>
+     </html>
